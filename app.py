@@ -69,6 +69,9 @@ st.markdown(
             background: radial-gradient(circle at top left, #1a093d 0%, #0f0f0f 35%, #070707 100%);
             color: #f3f4f6;
         }
+        .main .block-container {
+            padding-top: 1.1rem;
+        }
         .glass-card {
             background: linear-gradient(160deg, rgba(124, 58, 237, 0.16), rgba(255, 255, 255, 0.05));
             border: 1px solid rgba(255, 255, 255, 0.16);
@@ -102,6 +105,24 @@ st.markdown(
             border-radius: 12px;
             padding: 10px 14px;
             margin-top: 10px;
+        }
+        .hero-panel {
+            background: linear-gradient(100deg, rgba(124, 58, 237, 0.25), rgba(255, 140, 66, 0.15));
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            border-radius: 14px;
+            padding: 14px 16px;
+            margin: 8px 0 14px 0;
+            box-shadow: 0 0 28px rgba(124, 58, 237, 0.25);
+        }
+        .hero-title {
+            font-size: 1.06rem;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+        .hero-text {
+            color: #d1d5db;
+            font-size: 0.93rem;
+            line-height: 1.4;
         }
     </style>
     """,
@@ -139,6 +160,16 @@ def main() -> None:
     ticket_types = sorted(df["ticket_type"].unique().tolist())
     selected_ticket_types = st.sidebar.multiselect("Ticket Type", ticket_types, default=ticket_types)
 
+    offer_types = sorted(df["offer_type"].unique().tolist())
+    selected_offers = st.sidebar.multiselect("Offer Type", offer_types, default=offer_types)
+
+    zones = sorted(df["zone"].unique().tolist())
+    selected_zones = st.sidebar.multiselect("Zone", zones, default=zones)
+
+    min_rev = int(float(df["revenue"].min()))
+    max_rev = int(float(df["revenue"].max()))
+    revenue_range = st.sidebar.slider("Revenue Range", min_rev, max_rev, (min_rev, max_rev), step=100)
+
     st.sidebar.subheader("Simulation")
     if st.sidebar.button("Add Live Transaction"):
         append_live_record(DATA_PATH)
@@ -160,6 +191,12 @@ def main() -> None:
         start_date, end_date = min_date, max_date
 
     filtered_df = filter_dataset(df, start_date, end_date, selected_ticket_types)
+    filtered_df = filtered_df[
+        (filtered_df["offer_type"].isin(selected_offers))
+        & (filtered_df["zone"].isin(selected_zones))
+        & (filtered_df["revenue"].astype(float) >= float(revenue_range[0]))
+        & (filtered_df["revenue"].astype(float) <= float(revenue_range[1]))
+    ].copy()
 
     if filtered_df.empty:
         st.warning("No records match the selected filters.")
@@ -184,6 +221,56 @@ def main() -> None:
     k1.metric("Today Revenue", f"Rs {today_rev:,.0f}")
     k2.metric("Week Revenue", f"Rs {week_rev:,.0f}")
     k3.metric("Month Revenue", f"Rs {month_rev:,.0f}")
+
+    # Executive summary strip for management quick-read
+    revenue_growth = float(kpis.get("revenue_growth_pct", 0.0))
+    weekend_share = float(
+        (filtered_df[filtered_df["date"].dt.day_name().isin(["Saturday", "Sunday"])]["visitors"].sum())
+        / max(float(filtered_df["visitors"].sum()), 1.0)
+        * 100.0
+    )
+    avg_capacity = float((filtered_df["booked_capacity"] / filtered_df["max_capacity"]).replace([float("inf")], 0).mean() * 100.0)
+
+    rec_line = "Increase weekday promotions and student bundles to reduce weekend concentration."
+    if revenue_growth < 0:
+        rec_line = "Launch corrective campaign now: optimize pricing, improve offer mix, and reduce queue friction."
+    elif avg_capacity > 80:
+        rec_line = "Activate overflow staffing and dynamic slot controls to protect guest experience."
+
+    st.markdown(
+        f"""
+        <div class="hero-panel">
+            <div class="hero-title">📌 Executive Summary</div>
+            <div class="hero-text">
+                Revenue growth: <b>{revenue_growth:.1f}%</b> | Weekend visitor share: <b>{weekend_share:.1f}%</b> |
+                Avg capacity utilization: <b>{avg_capacity:.1f}%</b><br/>
+                Recommendation: {rec_line}
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    # Smart dynamic signals for immediate action
+    signal_cols = st.columns(3)
+    if revenue_growth > 20:
+        signal_cols[0].success("🔥 Strong growth trend observed. Consider scaling high-performing offers.")
+    elif revenue_growth < 0:
+        signal_cols[0].warning("⚠️ Revenue declining. Trigger tactical campaign and pricing correction.")
+    else:
+        signal_cols[0].info("Revenue stable. Use A/B testing to find next growth lever.")
+
+    if weekend_share > 62:
+        signal_cols[1].warning("⚠️ Traffic dependency on weekends is high. Build weekday demand strategy.")
+    else:
+        signal_cols[1].success("✅ Traffic distribution is healthy across the week.")
+
+    if avg_capacity > 85:
+        signal_cols[2].error("🚨 Overcrowding risk is elevated. Increase staff and slot controls now.")
+    elif avg_capacity > 70:
+        signal_cols[2].warning("⚠️ Capacity pressure rising. Monitor queue and incident trends closely.")
+    else:
+        signal_cols[2].success("✅ Capacity utilization is within safe operating range.")
 
     st.download_button(
         "Download Report (CSV)",
