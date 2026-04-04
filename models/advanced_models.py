@@ -9,12 +9,26 @@ Advanced ML Models for GRS Dashboard
 import pandas as pd
 import numpy as np
 from sklearn.cluster import KMeans
-from sklearn.preprocessing import StandardScaler, LabelEncoder
+from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LogisticRegression
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.ensemble import RandomForestRegressor
-from scipy import stats
+from math import erfc, sqrt
 from typing import Dict, List, Tuple, Any
+
+
+def _z_critical(confidence_level: float) -> float:
+    """Return z critical value for common two-tailed confidence levels."""
+    if confidence_level >= 0.99:
+        return 2.576
+    if confidence_level >= 0.95:
+        return 1.96
+    if confidence_level >= 0.90:
+        return 1.645
+    return 1.96
+
+
+def _two_tailed_p_value_from_z(z_score: float) -> float:
+    """Approximate two-tailed p-value using normal distribution."""
+    return float(erfc(abs(z_score) / sqrt(2.0)))
 
 
 def customer_segmentation(df: pd.DataFrame, n_clusters: int = 4) -> Dict[str, Any]:
@@ -388,9 +402,21 @@ def ab_testing_framework(df_control: pd.DataFrame, df_test: pd.DataFrame,
         else:
             results["percentage_difference"] = None
         
-        # T-test (independent samples)
-        t_stat, p_value = stats.ttest_ind(test_metric, control_metric)
-        results["t_statistic"] = float(t_stat)
+        # Independent means test using normal approximation (no SciPy dependency)
+        n_control = max(len(control_metric), 1)
+        n_test = max(len(test_metric), 1)
+        control_var = float(np.var(control_metric, ddof=1)) if n_control > 1 else 0.0
+        test_var = float(np.var(test_metric, ddof=1)) if n_test > 1 else 0.0
+        se_diff = sqrt((test_var / n_test) + (control_var / n_control)) if (n_test > 1 and n_control > 1) else 0.0
+
+        if se_diff > 0:
+            z_stat = float((results["test_mean"] - results["control_mean"]) / se_diff)
+            p_value = _two_tailed_p_value_from_z(z_stat)
+        else:
+            z_stat = 0.0
+            p_value = 1.0
+
+        results["z_statistic"] = z_stat
         results["p_value"] = float(p_value)
         
         alpha = 1 - confidence_level
@@ -415,12 +441,13 @@ def ab_testing_framework(df_control: pd.DataFrame, df_test: pd.DataFrame,
             
             results["effect_size_interpretation"] = effect_size
         
-        # Confidence intervals
-        ci = stats.t.interval(confidence_level, 
-                             len(test_metric) - 1, 
-                             loc=test_metric.mean(),
-                             scale=stats.sem(test_metric))
-        results["test_group_ci"] = [float(ci[0]), float(ci[1])]
+        # Confidence interval for test group mean using normal approximation
+        z_value = _z_critical(confidence_level)
+        test_std = float(np.std(test_metric, ddof=1)) if len(test_metric) > 1 else 0.0
+        test_se = test_std / sqrt(max(len(test_metric), 1)) if len(test_metric) > 0 else 0.0
+        ci_low = float(results["test_mean"] - (z_value * test_se))
+        ci_high = float(results["test_mean"] + (z_value * test_se))
+        results["test_group_ci"] = [ci_low, ci_high]
         
         # Sample size analysis (post-hoc power)
         min_sample_size = 2 * ((1.96 + 0.84)**2 * (control_metric.std()**2 + test_metric.std()**2)) / \
