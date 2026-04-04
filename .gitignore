@@ -36,8 +36,9 @@ ENV/
 .DS_Store
 
 # Streamlit
-.streamlit/
+.streamlit/cache/
 .streamlit_cache/
+!.streamlit/config.toml
 
 # Data and reports (keep structure, ignore large files)
 *.csv
