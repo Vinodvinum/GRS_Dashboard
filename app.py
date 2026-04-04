@@ -125,6 +125,14 @@ st.markdown(
             font-size: 0.93rem;
             line-height: 1.4;
         }
+        .top-brand {
+            text-align: right;
+            color: #c4b5fd;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            margin-top: 8px;
+            margin-bottom: 4px;
+        }
         .ticker-wrap {
             position: relative;
             overflow: hidden;
@@ -165,11 +173,13 @@ def main() -> None:
     with st.spinner("Loading dashboard..."):
         time.sleep(1)
 
-    st.markdown("### 🎢 GRS MIS Dashboard | Vinnu AI Labs")
-
-    if st.button("🔄 Refresh Data"):
-        st.cache_data.clear()
-        st.rerun()
+    h_left, h_right = st.columns([1, 2])
+    with h_left:
+        if st.button("🔄 Refresh Data"):
+            st.cache_data.clear()
+            st.rerun()
+    with h_right:
+        st.markdown('<div class="top-brand">🎢 GRS MIS Dashboard | Vinnu AI Labs</div>', unsafe_allow_html=True)
 
     st.title("🎢 GRS Fantasy Park Dashboard")
     st.caption("Smart MIS Dashboard v2 | Management-grade analytics with trend and predictive intelligence")
