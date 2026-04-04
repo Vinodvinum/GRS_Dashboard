@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta
 from pathlib import Path
+import time
 from typing import cast
 
 import streamlit as st
@@ -160,6 +161,15 @@ def get_data(path: Path):
 
 def main() -> None:
     ensure_dataset(DATA_PATH)
+
+    with st.spinner("Loading dashboard..."):
+        time.sleep(1)
+
+    st.markdown("### 🎢 GRS MIS Dashboard | Vinnu AI Labs")
+
+    if st.button("🔄 Refresh Data"):
+        st.cache_data.clear()
+        st.rerun()
 
     st.title("🎢 GRS Fantasy Park Dashboard")
     st.caption("Smart MIS Dashboard v2 | Management-grade analytics with trend and predictive intelligence")
