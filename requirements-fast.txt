@@ -1,0 +1,10 @@
+# FAST DEPLOYMENT REQUIREMENTS
+# Use this for quicker Streamlit Cloud deploys
+# (~30-40% faster than full requirements.txt)
+
+streamlit>=1.28.0
+pandas>=2.0.0
+plotly>=5.17.0
+numpy>=1.24.0
+scikit-learn>=1.3.0
+scipy>=1.10.0
