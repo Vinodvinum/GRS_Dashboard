@@ -124,6 +124,29 @@ st.markdown(
             font-size: 0.93rem;
             line-height: 1.4;
         }
+        .ticker-wrap {
+            position: relative;
+            overflow: hidden;
+            border-radius: 12px;
+            border: 1px solid rgba(248, 113, 113, 0.35);
+            background: linear-gradient(90deg, rgba(127, 29, 29, 0.45), rgba(31, 41, 55, 0.45));
+            margin: 8px 0 14px 0;
+            box-shadow: 0 0 16px rgba(248, 113, 113, 0.2);
+        }
+        .ticker-track {
+            white-space: nowrap;
+            display: inline-block;
+            padding: 10px 0;
+            min-width: 100%;
+            animation: ticker-scroll 26s linear infinite;
+            font-size: 0.93rem;
+            color: #fee2e2;
+            font-weight: 600;
+        }
+        @keyframes ticker-scroll {
+            0% { transform: translateX(100%); }
+            100% { transform: translateX(-100%); }
+        }
     </style>
     """,
     unsafe_allow_html=True,
@@ -271,6 +294,36 @@ def main() -> None:
         signal_cols[2].warning("⚠️ Capacity pressure rising. Monitor queue and incident trends closely.")
     else:
         signal_cols[2].success("✅ Capacity utilization is within safe operating range.")
+
+    # Live alert ticker for high-visibility operations monitoring
+    incidents_today = int(today_df["incident_count"].sum()) if not today_df.empty else int(filtered_df["incident_count"].tail(50).sum())
+    ticker_alerts: list[str] = []
+    if revenue_growth < 0:
+        ticker_alerts.append(f"⚠️ Revenue trend negative ({revenue_growth:.1f}%). Activate recovery campaign.")
+    elif revenue_growth > 20:
+        ticker_alerts.append(f"🔥 Revenue acceleration detected ({revenue_growth:.1f}%). Scale winning offers.")
+
+    if weekend_share > 62:
+        ticker_alerts.append(f"📌 Weekend dependency high ({weekend_share:.1f}%). Build weekday traffic demand.")
+
+    if avg_capacity > 85:
+        ticker_alerts.append(f"🚨 Capacity critical ({avg_capacity:.1f}%). Open overflow lanes and reassign staff.")
+
+    if incidents_today >= 3:
+        ticker_alerts.append(f"🛑 Incident spike: {incidents_today} incidents today. Review ride uptime and safety checks.")
+
+    if not ticker_alerts:
+        ticker_alerts.append("✅ Operations stable. No critical alerts at this moment.")
+
+    ticker_text = "   |   ".join(ticker_alerts)
+    st.markdown(
+        f"""
+        <div class="ticker-wrap">
+            <div class="ticker-track">🚦 LIVE ALERT FEED  •  {ticker_text}</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
     st.download_button(
         "Download Report (CSV)",
