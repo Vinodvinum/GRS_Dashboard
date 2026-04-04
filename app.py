@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import timedelta
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import cast
 
@@ -239,6 +239,7 @@ def main() -> None:
     today_rev = float(today_df["revenue"].astype(float).sum())
     week_rev = float(week_df["revenue"].astype(float).sum())
     month_rev = float(month_df["revenue"].astype(float).sum())
+    visitors_today = int(today_df["visitors"].sum()) if not today_df.empty else 0
 
     k1, k2, k3 = st.columns(3)
     k1.metric("Today Revenue", f"Rs {today_rev:,.0f}")
@@ -294,6 +295,23 @@ def main() -> None:
         signal_cols[2].warning("⚠️ Capacity pressure rising. Monitor queue and incident trends closely.")
     else:
         signal_cols[2].success("✅ Capacity utilization is within safe operating range.")
+
+    # Operational alert system (high-visibility business triggers)
+    if visitors_today > 3000:
+        st.error("🚨 High crowd alert! Consider crowd control measures immediately.")
+    if revenue_growth < -10:
+        st.warning("⚠️ Revenue drop detected compared to last period. Review offer mix and conversion funnel.")
+
+    # Top insight of the day
+    if weekend_share >= 60:
+        top_insight = f"💡 Insight of the day: Weekend traffic drives {weekend_share:.1f}% of visitors. Weekday campaigns can unlock hidden revenue."
+    elif revenue_growth > 15:
+        top_insight = f"💡 Insight of the day: Revenue momentum is strong at {revenue_growth:.1f}%. Scale your best-performing offers now."
+    else:
+        top_insight = f"💡 Insight of the day: Capacity at {avg_capacity:.1f}% is stable. Focus on conversion efficiency to grow margin."
+    st.success(top_insight)
+
+    st.caption(f"Last updated: {datetime.now().strftime('%Y-%m-%d %I:%M %p')}")
 
     # Live alert ticker for high-visibility operations monitoring
     incidents_today = int(today_df["incident_count"].sum()) if not today_df.empty else int(filtered_df["incident_count"].tail(50).sum())

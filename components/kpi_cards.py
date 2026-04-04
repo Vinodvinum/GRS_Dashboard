@@ -47,20 +47,44 @@ def compute_kpis(
 
 def render_kpi_cards(metrics: dict[str, float]) -> None:
     cards = [
-        ("Revenue", f"Rs {metrics['total_revenue']:,.0f}", f"{metrics['revenue_growth_pct']:.2f}%", "💰"),
-        ("Visitors", f"{int(metrics['total_visitors']):,}", "Total", "👥"),
-        ("Avg Rev / Visitor", f"Rs {metrics['avg_revenue_per_visitor']:,.0f}", "Efficiency", "📈"),
-        ("Growth", f"{metrics['revenue_growth_pct']:.2f}%", "vs previous period", "🚀"),
+        (
+            "Total Revenue",
+            f"Rs {metrics['total_revenue']:,.0f}",
+            f"{metrics['revenue_growth_pct']:.2f}% vs previous period",
+            "💰",
+            "#f59e0b",
+        ),
+        (
+            "Total Visitors",
+            f"{int(metrics['total_visitors']):,}",
+            "Current selected period",
+            "👥",
+            "#38bdf8",
+        ),
+        (
+            "Avg Revenue / Visitor",
+            f"Rs {metrics['avg_revenue_per_visitor']:,.0f}",
+            "Spending efficiency",
+            "📈",
+            "#34d399",
+        ),
+        (
+            "Revenue Growth",
+            f"{metrics['revenue_growth_pct']:.2f}%",
+            "Momentum indicator",
+            "🚀",
+            "#a78bfa",
+        ),
     ]
 
     cols = st.columns(4)
-    for col, (title, value, delta, icon) in zip(cols, cards):
+    for col, (title, value, delta, icon, accent) in zip(cols, cards):
         with col:
             st.markdown(
                 f"""
                 <div class="glass-card">
                     <div class="card-title">{icon} {title}</div>
-                    <div class="card-value">{value}</div>
+                    <div class="card-value" style="font-size: 2rem; color: {accent}; text-shadow: 0 0 14px rgba(255,255,255,0.08);">{value}</div>
                     <div class="card-delta">{delta}</div>
                 </div>
                 """,

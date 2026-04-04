@@ -2,6 +2,8 @@
 
 **Enterprise-Grade Analytics & Intelligence Platform for Theme Park Operations**
 
+![Dashboard Preview](assets/dashboard-preview.svg)
+
 A production-ready MIS (Management Information System) dashboard built with Streamlit, Pandas, Plotly, NumPy, and Scikit-learn. Designed to replicate real GRS Fantasy Park operations with multi-revenue streams, real-time queue management, predictive intelligence, and business decision support.
 
 ---
