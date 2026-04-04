@@ -180,13 +180,13 @@ def main() -> None:
         max_value=max_date,
     )
 
-    ticket_types = sorted(df["ticket_type"].unique().tolist())
+    ticket_types = sorted(df["ticket_type"].dropna().astype(str).unique().tolist())
     selected_ticket_types = st.sidebar.multiselect("Ticket Type", ticket_types, default=ticket_types)
 
-    offer_types = sorted(df["offer_type"].unique().tolist())
+    offer_types = sorted(df["offer_type"].dropna().astype(str).unique().tolist())
     selected_offers = st.sidebar.multiselect("Offer Type", offer_types, default=offer_types)
 
-    zones = sorted(df["zone"].unique().tolist())
+    zones = sorted(df["zone"].dropna().astype(str).unique().tolist())
     selected_zones = st.sidebar.multiselect("Zone", zones, default=zones)
 
     min_rev = int(float(df["revenue"].min()))
